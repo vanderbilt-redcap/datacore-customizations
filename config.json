@@ -1,0 +1,13 @@
+{
+	"name": "Limit Project Status Transitions",
+	"namespace": "Vanderbilt\\LimitProjectStatusTransitionsModule",
+	"framework-version": 12,
+	"description": "TBD",
+	"authors": [
+		{
+			"name": "Mark McEver",
+			"email": "datacore@vumc.org",
+			"institution": "Vanderbilt University Medical Center"
+		}
+	]
+}
