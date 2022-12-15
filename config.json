@@ -2,7 +2,7 @@
 	"name": "Limit Project Status Transitions",
 	"namespace": "Vanderbilt\\LimitProjectStatusTransitionsModule",
 	"framework-version": 12,
-	"description": "TBD",
+	"description": "Prevents non-admins from moving projects out of 'Production' status into 'Analysis/Cleanup' or 'Completed' status.",
 	"authors": [
 		{
 			"name": "Mark McEver",
