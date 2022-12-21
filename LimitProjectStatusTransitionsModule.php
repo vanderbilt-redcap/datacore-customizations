@@ -16,7 +16,7 @@ class LimitProjectStatusTransitionsModule extends \ExternalModules\AbstractExter
                     const start = Date.now();
                     const intervalId = setInterval(() => {
                         const elapsed = Date.now() - start
-                        const message = <?=json_encode($this->getProjectSetting('message'))?>;
+                        const message = <?=json_encode($this->getProjectSetting('status-transition-blocked-message'))?>;
                         const methodOverrides = {}
 
                         if(<?=json_encode($completed_time == '')?>){

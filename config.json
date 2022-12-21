@@ -17,10 +17,9 @@
 			"type": "project-id"
 		},
 		{
-			"key": "message",
+			"key": "status-transition-blocked-message",
 			"name": "Message to display when a status transition is blocked",
-			"type": "rich-text",
-			"allow-project-overrides": true
+			"type": "rich-text"
 		}
 	],
 	"crons": [
