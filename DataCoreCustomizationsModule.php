@@ -63,8 +63,13 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
     }
 
     function dailyCron(){
-        $enabledProjects = array_flip($this->getProjectsWithModuleEnabled());
         $projectListPid = $this->getProjectListPID();
+        if($projectListPid === 0){
+            // This setting has not been set
+            return;
+        }
+
+        $enabledProjects = array_flip($this->getProjectsWithModuleEnabled());
         $records = \REDCap::getData($projectListPid, 'json-array', null, 'pid');
         $records[] = ['pid' => $projectListPid];
         foreach($records as $record){
