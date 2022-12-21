@@ -55,4 +55,27 @@ class LimitProjectStatusTransitionsModule extends \ExternalModules\AbstractExter
             <?php
         }
     }
+
+    function dailyCron(){
+        $enabledProjects = array_flip($this->getProjectsWithModuleEnabled());
+        $records = \REDCap::getData($this->getSystemSetting('project-list-pid'), 'json-array', null, 'pid');
+        foreach($records as $record){
+            $pid = (int) trim($record['pid']);
+            if($pid === 0){
+                continue;
+            }
+
+            if(isset($enabledProjects[$pid])){
+                unset($enabledProjects[$pid]);
+            }
+            else{
+                $this->enableModule($pid);
+            }
+        }
+
+        // Any projects NOT in the list should NOT have the module enabled.
+        foreach($enabledProjects as $pid=>$unused){
+            $this->disableModule($pid);
+        }
+    }
 }

@@ -12,10 +12,24 @@
 	],
 	"system-settings": [
 		{
+			"key": "project-list-pid",
+			"name": "Select the project containing the list of project IDs on which to enable this module",
+			"type": "project-id"
+		},
+		{
 			"key": "message",
 			"name": "Message to display when a status transition is blocked",
 			"type": "rich-text",
 			"allow-project-overrides": true
 		}
-	]
+	],
+	"crons": [
+		{
+			"cron_name": "daily-cron",
+			"cron_description": "Ensures this module is enabled on all DataCore projects daily.",
+			"method": "dailyCron",
+			"cron_frequency": "86400",
+			"cron_max_run_time": "86400"
+		}
+	 ]
 }
