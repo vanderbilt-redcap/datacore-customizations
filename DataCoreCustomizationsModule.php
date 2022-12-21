@@ -1,6 +1,6 @@
-<?php namespace Vanderbilt\LimitProjectStatusTransitionsModule;
+<?php namespace Vanderbilt\DataCoreCustomizationsModule;
 
-class LimitProjectStatusTransitionsModule extends \ExternalModules\AbstractExternalModule
+class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModule
 {
     function redcap_every_page_top(){
         global $completed_time;
@@ -42,7 +42,7 @@ class LimitProjectStatusTransitionsModule extends \ExternalModules\AbstractExter
                             for(const [name, action] of Object.entries(methodOverrides)){
                                 const original = window[name]
                                 if(original === undefined){
-                                    alert('The Limit Project Status Transitions module could not find the ' + name + '() function!')
+                                    alert('The DataCore Customizations module could not find the ' + name + '() function!')
                                     continue
                                 }
 

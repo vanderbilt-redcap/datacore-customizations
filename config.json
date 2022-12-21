@@ -1,6 +1,6 @@
 {
-	"name": "Limit Project Status Transitions",
-	"namespace": "Vanderbilt\\LimitProjectStatusTransitionsModule",
+	"name": "DataCore Customizations",
+	"namespace": "Vanderbilt\\DataCoreCustomizationsModule",
 	"framework-version": 12,
 	"description": "Prevents non-admins from moving projects out of 'Production' status into 'Analysis/Cleanup' or 'Completed' status.",
 	"authors": [
