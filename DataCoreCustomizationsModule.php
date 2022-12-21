@@ -58,9 +58,15 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         }
     }
 
+    private function getProjectListPID(){
+        return (int) $this->getSystemSetting('project-list-pid');
+    }
+
     function dailyCron(){
         $enabledProjects = array_flip($this->getProjectsWithModuleEnabled());
-        $records = \REDCap::getData($this->getSystemSetting('project-list-pid'), 'json-array', null, 'pid');
+        $projectListPid = $this->getProjectListPID();
+        $records = \REDCap::getData($projectListPid, 'json-array', null, 'pid');
+        $records[] = ['pid' => $projectListPid];
         foreach($records as $record){
             $pid = (int) trim($record['pid']);
             if($pid === 0){
