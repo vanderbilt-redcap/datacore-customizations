@@ -20,6 +20,11 @@
 			"key": "status-transition-blocked-message",
 			"name": "Message to display when a status transition is blocked",
 			"type": "rich-text"
+		},
+		{
+			"key": "completed-dialog-message",
+			"name": "Message to display at the top of the dialog displayed on completed projects",
+			"type": "rich-text"
 		}
 	],
 	"crons": [

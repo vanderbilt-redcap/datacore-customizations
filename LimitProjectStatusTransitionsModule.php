@@ -5,6 +5,8 @@ class LimitProjectStatusTransitionsModule extends \ExternalModules\AbstractExter
     function redcap_every_page_top(){
         global $completed_time;
 
+        $GLOBALS['lang']['bottom_93'] = $this->getSystemSetting('completed-dialog-message');
+
         if(PAGE === 'ProjectSetup/other_functionality.php'){
             ?>
             <script>
