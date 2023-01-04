@@ -36,6 +36,10 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
                             }
                         }
 
+                        methodOverrides['delete_project'] = (original) => {
+                            simpleDialog(message)
+                        }
+
                         if(window[Object.keys(methodOverrides)[0]] !== undefined || elapsed > 3000){
                             clearInterval(intervalId)
 
