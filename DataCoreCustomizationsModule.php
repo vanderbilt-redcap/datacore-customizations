@@ -66,6 +66,28 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         return (int) $this->getSystemSetting('project-list-pid');
     }
 
+    function getProjectsWithModuleEnabledCustom(){
+        $results = $this->query("
+            SELECT CAST(s.project_id AS CHAR) AS project_id
+            FROM redcap_external_modules m
+            JOIN redcap_external_module_settings s
+                ON m.external_module_id = s.external_module_id
+            JOIN redcap_projects p
+                ON s.project_id = p.project_id
+            WHERE
+                m.directory_prefix = ?
+                AND s.value = 'true'
+                AND s.key = 'enabled'
+        ", $this->getPrefix());
+
+        $pids = [];
+        while($row = $results->fetch_assoc()) {
+            $pids[] = $row['project_id'];
+        }
+
+        return $pids;
+    }
+
     function dailyCron(){
         $projectListPid = $this->getProjectListPID();
         if($projectListPid === 0){
@@ -73,7 +95,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
             return;
         }
 
-        $enabledProjects = array_flip($this->getProjectsWithModuleEnabled());
+        $enabledProjects = array_flip($this->getProjectsWithModuleEnabledCustom());
         $records = \REDCap::getData($projectListPid, 'json-array', null, 'pid');
         $records[] = ['pid' => $projectListPid];
         foreach($records as $record){
@@ -86,7 +108,13 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
                 unset($enabledProjects[$pid]);
             }
             else{
-                $this->enableModule($pid);
+                $result = $this->query('select project_id from redcap_projects where project_id = ?', $pid);
+                if($result->fetch_assoc() === null){
+                    // The specified project has likely been deleted.  Ignore it.
+                }
+                else{
+                    $this->enableModule($pid);
+                }
             }
         }
 
