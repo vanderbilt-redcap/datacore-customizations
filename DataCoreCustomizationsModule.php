@@ -131,4 +131,66 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
             $this->enableModule($targetPid);
         }
     }
+
+    private function arrayDeepDiff($a, $b){
+        $diff = array_udiff($a, $b,  function($c, $d){
+            return strcmp(
+                json_encode($c),
+                json_encode($d),
+            );
+        });
+
+        // Make sure keys start with zero and are sequential
+        return array_values($diff);
+    }
+
+    function hasRequestedBy($s){
+        return str_contains($s, 'Requested by');
+    }
+
+    function getRequestedByError(){
+        return 'Someone on the grant must be set for the "Requested By" field in order to automatically log entries for this Assembla ticket.  This should ONLY be done if that person is appropriate for ALL time logged against this ticket.';
+    }
+
+    private function checkForErrors($log){
+        $hours1 = $log['project_hours'];
+        $hours2 = $log['project_hours_2'];
+        $notes1 = $log['project_notes'];
+        $notes2 = $log['project_notes_2'];
+
+        if(!empty($hours1) && !empty($hours2)){
+            return 'Time entries that include both "project_hours" and "project_hours_2" are not currently supported.';
+        }
+        else if(
+            (!empty($hours1) && !$this->hasRequestedBy($notes1))
+            ||
+            (!empty($hours2) && !$this->hasRequestedBy($notes2))
+        ){
+            return $this->getRequestedByError();
+        }
+
+        return null;
+    }
+
+    function compareTimeLogs($assemblaLogs, $existingLogs){
+        $unmatched = $this->arrayDeepDiff($existingLogs, $assemblaLogs);
+        if(!empty($unmatched)){
+            return [$unmatched, [], []];
+        }
+
+        $new = [];
+        $incomplete = [];
+        foreach($this->arrayDeepDiff($assemblaLogs, $existingLogs) as $newLog){
+            $error = $this->checkForErrors($newLog);
+            if($error === null){
+                $new[] = $newLog;
+            }
+            else{
+                $newLog['error'] = $error;
+                $incomplete[] = $newLog;
+            }
+        }
+
+        return [[], $new, $incomplete];
+    }
 }
