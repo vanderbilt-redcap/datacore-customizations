@@ -40,5 +40,8 @@
 			"cron_frequency": "86400",
 			"cron_max_run_time": "86400"
 		}
-	 ]
+	],
+	"compatibility": {
+		"php-version-min": "7.3.0"
+	}
 }

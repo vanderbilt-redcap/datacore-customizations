@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../../redcap_connect.php';
 
 class LogTimeTest extends \ExternalModules\ModuleBaseTest
 {
-    public DataCoreCustomizationsModule $module;
+    public $module;
     
     private $rands = [];
 
