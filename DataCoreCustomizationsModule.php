@@ -132,8 +132,11 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         }
     }
 
-    private function arrayDeepDiff($a, $b){
+    function arrayDeepDiff($a, $b){
         $diff = array_udiff($a, $b,  function($c, $d){
+            ksort($c);
+            ksort($d);
+
             return strcmp(
                 json_encode($c),
                 json_encode($d),
@@ -149,17 +152,26 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
     }
 
     function getRequestedByError(){
-        return 'Someone on the grant must be set for the "Requested By" field in order to automatically log entries for this Assembla ticket.  This should ONLY be done if that person is appropriate for ALL time logged against this ticket.';
+        return 'Someone on the grant must be set for the "Requested By" field on this Assembla ticket in order to automatically log entries for it.  This should ONLY be done if that person is appropriate for ALL time logged against this ticket.';
     }
 
-    private function checkForErrors($log){
-        $hours1 = $log['project_hours'];
-        $hours2 = $log['project_hours_2'];
-        $notes1 = $log['project_notes'];
-        $notes2 = $log['project_notes_2'];
+    function getHoursError(){
+        return 'Time entries that include both "project_hours" and "project_hours_2" are not currently supported.';
+    }
+
+    function getProjectNameError(){
+        return 'An "Hours Survey Project" must be selected for this Assembla ticket.';
+    }
+
+    function checkForErrors($log){
+        $hours1 = $log['project_hours'] ?? null;
+        $hours2 = $log['project_hours_2'] ?? null;
+        $notes1 = $log['project_notes'] ?? null;
+        $notes2 = $log['project_notes_2'] ?? null;
+        $projectName = $log['project_name'] ?? null;
 
         if(!empty($hours1) && !empty($hours2)){
-            return 'Time entries that include both "project_hours" and "project_hours_2" are not currently supported.';
+            return $this->getHoursError();
         }
         else if(
             (!empty($hours1) && !$this->hasRequestedBy($notes1))
@@ -168,11 +180,28 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         ){
             return $this->getRequestedByError();
         }
+        else if(empty($projectName)){
+            return $this->getProjectNameError();
+        }
 
         return null;
     }
 
+    function ensureUniqueCheckFieldsExist($logs){
+        foreach($this->getUniqueCheckFields() as $field){
+            foreach($logs as $log){
+                if(empty($log[$field])){
+                    throw new \Exception("The following log cannot be processed because it is missing the '$field' field: " . json_encode($log));
+                }
+            }
+        }
+    }
+
     function compareTimeLogs($assemblaLogs, $existingLogs){
+        foreach(func_get_args() as $logs){
+            $this->ensureUniqueCheckFieldsExist($logs);
+        }
+
         $unmatched = $this->arrayDeepDiff($existingLogs, $assemblaLogs);
         if(!empty($unmatched)){
             return [$unmatched, [], []];
@@ -192,5 +221,53 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         }
 
         return [[], $new, $incomplete];
+    }
+
+    function displayTimeLogs($message, $logs){
+        if(empty($logs)){
+            return;
+        }
+
+        echo "<h6>$message</h6>";
+        echo "<table class='table'>";
+        echo "<tr>";
+        echo "<th>Hours</th>";
+        echo "<th>Description</th>";
+        if(isset($logs[0]['error'])){
+            echo "<th>Error</th>";
+        }
+        echo "</tr>";
+
+        foreach($logs as $log){
+            $hours = $log['project_hours'];
+            $notes = $log['project_notes'];
+            if($hours === ''){
+                $hours = $log['project_hours_2'];
+                $notes = $log['project_notes_2'];
+            }
+
+            echo "<tr>";
+            echo "<td>$hours</td>";
+            echo "<td>$notes</td>";
+            if(isset($log['error'])){
+                echo "<td>{$log['error']}</td>";
+            }
+            echo "</tr>";
+        }
+        echo "</table>";
+    }
+
+    function getUniqueCheckFields(){
+        return [
+            'programmer_name',
+            'billing_month',
+            'billing_year',
+            'project_role',
+        ];
+    }
+
+    function formatAssemblaUsername($name){
+        $parts = explode(' ', $name);
+        return $parts[1] . ' (' . $parts[0] . ')';
     }
 }

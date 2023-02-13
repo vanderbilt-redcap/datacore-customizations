@@ -17,6 +17,11 @@
 			"type": "project-id"
 		},
 		{
+			"key": "hours-survey-pid",
+			"name": "Select the 'CORE - Hourly Billing- NEW' project",
+			"type": "project-id"
+		},
+		{
 			"key": "status-transition-blocked-message",
 			"name": "Message to display when a status transition is blocked",
 			"type": "rich-text"

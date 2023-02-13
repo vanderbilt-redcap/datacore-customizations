@@ -22,6 +22,9 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
 
     private function createTimeLog(){
         $log = [
+            'programmer_name' => $this->getUniqueRand(),
+            'billing_month' => $this->getUniqueRand(),
+            'billing_year' => $this->getUniqueRand(),
             'project_role' => $this->getUniqueRand(),
             'project_name' => $this->getUniqueRand(),
             'project_hours' => '',
@@ -51,7 +54,30 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
         return $log;
     }
 
-    function testLogTime(){
+    function testCompareTimeLogs_requireUniqueCheckFields(){
+        $assert = function($a, $b){
+            $this->assertThrowsException(
+                fn() => $this->compareTimeLogs($a, $b),
+                'cannot be processed because it is missing',
+            );
+        };
+
+        $goodLog = $this->createTimeLog();
+        $badLog = $this->createTimeLog();
+        $badLog['programmer_name'] = '';
+
+        $assert(
+            [$goodLog],
+            [$badLog],
+        );
+
+        $assert(
+            [$goodLog],
+            [$badLog],
+        );
+    }
+
+    function testCompareTimeLogs(){
         $existingLog = $this->createTimeLog();
         $newLog = $this->createTimeLog();
         $unmatchedLog = $this->createTimeLog();
@@ -122,5 +148,49 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
                 }
             }
         }
+    }
+
+    function testArrayDeepDiff_itemOrder(){
+        // Make sure item order does not matter (per ksort call in arrayDeepDiff())
+        $this->assertEmpty($this->arrayDeepDiff(
+            [
+                [
+                    'programmer_name' => 1,
+                    'billing_month' => 1,
+                    'billing_year' => 1,
+                    'project_role' => 1,
+                    'project_name' => 1,
+                ]
+            ],
+            [
+                [
+                    'billing_month' => 1,
+                    'billing_year' => 1,
+                    'project_role' => 1,
+                    'project_name' => 1,
+                    'programmer_name' => 1,
+                ]
+            ]
+        ));
+    }
+
+    function testCheckForErrors(){
+        $assert = function($log, $error){
+            $this->assertSame($error, $this->checkForErrors($log));
+        };
+
+        $assert([], $this->getProjectNameError());
+        $assert(['project_name' => 1], null);
+        $assert([
+            'project_name' => 1,
+            'project_hours' => 1,
+            'project_hours_2' => 1,
+        ], $this->getHoursError());
+
+        $assert([
+            'project_name' => 1,
+            'project_hours' => 1,
+            'project_notes' => 'whatever',
+        ], $this->getRequestedByError());
     }
 }
