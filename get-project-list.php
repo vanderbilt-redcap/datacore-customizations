@@ -10,6 +10,7 @@ $result = $module->query($sql, []);
 echo "<p>Select an option from the hours survey project dropdown:</p>";
 echo "<select style='display: none'>";
 echo "<option value=''></option>";
+echo "<option value='None'></option>";
 foreach($result->fetch_all() as $project){
     $project = $module->escape($project);
     echo "<option value='{$project[0]}'>{$project[1]}</option>";
@@ -34,11 +35,18 @@ echo "</select>";
     (() => {
         const select = document.querySelector('select')
 
-        new Choices(select);
+        const choices = new Choices(select)
+        choices.showDropdown()
             
         select.addEventListener('change', () => {
             const option = select.selectedOptions[0]
-            window.parent.postMessage(option.textContent + ' (' + option.value + ')', '*')
+
+            let value = option.textContent
+            if(value !== 'None'){
+                value += ' (' + option.value + ')'
+            }
+
+            window.parent.postMessage(value, '*')
         })
     })()
 </script>
