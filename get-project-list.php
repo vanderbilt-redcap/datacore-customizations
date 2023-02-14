@@ -10,7 +10,6 @@ $result = $module->query($sql, []);
 echo "<p>Select an option from the hours survey project dropdown:</p>";
 echo "<select style='display: none'>";
 echo "<option value=''></option>";
-echo "<option value='None'></option>";
 foreach($result->fetch_all() as $project){
     $project = $module->escape($project);
     echo "<option value='{$project[0]}'>{$project[1]}</option>";
@@ -18,10 +17,20 @@ foreach($result->fetch_all() as $project){
 echo "</select>";
 
 ?>
+<button>Remove Currently Selected Project</button>
+
 <style>
     .choices__inner{
         min-height: 20px !important;
         width: 95% !important;
+    }
+
+    button{
+        bottom: 5px;
+        position: absolute;
+        margin: auto;
+        display: block;
+        left: 100px;
     }
 </style>
 
@@ -33,6 +42,10 @@ echo "</select>";
 
 <script>
     (() => {
+        const sendSelection = (value) => {
+            window.parent.postMessage(value, '*')
+        }
+
         const select = document.querySelector('select')
 
         const choices = new Choices(select)
@@ -40,13 +53,11 @@ echo "</select>";
             
         select.addEventListener('change', () => {
             const option = select.selectedOptions[0]
+            sendSelection(option.textContent + ' (' + option.value + ')')
+        })
 
-            let value = option.textContent
-            if(value !== 'None'){
-                value += ' (' + option.value + ')'
-            }
-
-            window.parent.postMessage(value, '*')
+        document.querySelector('button').addEventListener('click', () => {
+            sendSelection('None')
         })
     })()
 </script>
