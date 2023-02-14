@@ -8,7 +8,7 @@ $sql = $project->metadata['project_name']['element_enum'];
 $result = $module->query($sql, []);
 
 echo "<p>Select an option from the hours survey project dropdown:</p>";
-echo "<select style='width: 100%'>";
+echo "<select style='display: none'>";
 echo "<option value=''></option>";
 foreach($result->fetch_all() as $project){
     $project = $module->escape($project);
