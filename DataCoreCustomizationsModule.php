@@ -152,7 +152,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
     }
 
     function getRequestedByError(){
-        return 'Someone on the grant must be set for the "Requested By" field on this Assembla ticket in order to automatically log entries for it.  This should ONLY be done if that person is appropriate for ALL time logged against this ticket.';
+        return 'Someone on the grant must be set for the "Requested By" field on this Assembla ticket in order to automatically log entries for it.  This should ONLY be done if that person is appropriate for ALL time logged by anyone on this ticket.';
     }
 
     function getHoursError(){
@@ -160,7 +160,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
     }
 
     function getProjectNameError(){
-        return 'An "Hours Survey Project" must be selected for this Assembla ticket.';
+        return 'An "Hours Survey Project" must be selected for this Assembla ticket.  This should ONLY be done if that project is appropriate for all time logged by anyone on this ticket.';
     }
 
     function checkForErrors($log){
