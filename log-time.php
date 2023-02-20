@@ -70,6 +70,10 @@ if(empty($pid)){
 
 $programmerName = $module->formatAssemblaUsername($payload['username']);
 $programmerId = array_flip($module->getChoiceLabels('programmer_name', $pid))[$programmerName];
+if(empty($programmerId)){
+    die("The following name could not be found as an option in the hours survey: $programmerName");
+}
+
 $assemblaEntries = $payload['entries'];
 
 $totalAssembalHours = 0;
