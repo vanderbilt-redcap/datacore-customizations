@@ -268,6 +268,6 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 
     function formatAssemblaUsername($name){
         $parts = explode(' ', $name);
-        return $this->escape($parts[1] . ' (' . $parts[0] . ')');
+        return $this->escape(ucfirst($parts[1]) . ' (' . ucfirst($parts[0]) . ')');
     }
 }
