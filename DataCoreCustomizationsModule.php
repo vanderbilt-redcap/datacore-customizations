@@ -266,8 +266,11 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         ];
     }
 
-    function formatAssemblaUsername($name){
-        $parts = explode(' ', $name);
-        return $this->escape(ucfirst($parts[1]) . ' (' . ucfirst($parts[0]) . ')');
+    function getProgrammerId($pid){
+        $programmerName = $GLOBALS['user_lastname'] . ' (' . $GLOBALS['user_firstname'] . ')';
+        $programmerId = array_flip($this->getChoiceLabels('programmer_name', $pid))[$programmerName];
+        if(empty($programmerId)){
+            die("The following name could not be found as an option in the hours survey: $programmerName");
+        }
     }
 }

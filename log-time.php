@@ -68,11 +68,7 @@ if(empty($pid)){
     die('Please set the "CORE - Hourly Billing- NEW" system setting.');
 }
 
-$programmerName = $module->formatAssemblaUsername($payload['username']);
-$programmerId = array_flip($module->getChoiceLabels('programmer_name', $pid))[$programmerName];
-if(empty($programmerId)){
-    die("The following name could not be found as an option in the hours survey: $programmerName");
-}
+$programmerId = $module->getProgrammerId($pid);
 
 $assemblaEntries = $payload['entries'];
 
