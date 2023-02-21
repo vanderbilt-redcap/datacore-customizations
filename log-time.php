@@ -114,8 +114,10 @@ $existing = \REDCap::getData([
 if(!empty($unmatched)){
     // Only show unmatched logs, since new & incomplete logs can't be correctly determined when unmatched logs exist.
     $module->displayTimeLogs("
-        The following time logs already existed in REDCap, but do not have matching entries in Assembla.
-        Please resolve these discrepancies on either side, and try syncing again:
+        The following time logs already existed in REDCap, but do not have matching entries in Assembla.<br>
+        If you've logged any time entries manually this month, you will not be able to use this tool.<br>
+        If you have not logged any time entries manually, please send a copy of the following to Mark:<br>
+        
     ", $unmatched);
 }
 else if(!empty($incomplete)){
