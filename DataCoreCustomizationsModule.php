@@ -272,5 +272,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         if(empty($programmerId)){
             die("The following name could not be found as an option in the hours survey: $programmerName");
         }
+
+        return $programmerId;
     }
 }
