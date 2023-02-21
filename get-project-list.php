@@ -17,7 +17,10 @@ foreach($result->fetch_all() as $project){
 echo "</select>";
 
 ?>
-<button>Remove Currently Selected Project</button>
+<div id='button-container'>
+    <button id='remove-current-selection-button'>Remove Currently Selected Project</button>
+    <button id='cancel-button'>Cancel</button>
+</div>
 
 <style>
     .choices__inner{
@@ -25,12 +28,12 @@ echo "</select>";
         width: 95% !important;
     }
 
-    button{
+    #button-container{
         bottom: 5px;
         position: absolute;
         margin: auto;
         display: block;
-        left: 100px;
+        left: 75px;
     }
 </style>
 
@@ -56,8 +59,12 @@ echo "</select>";
             sendSelection(option.textContent + ' (' + option.value + ')')
         })
 
-        document.querySelector('button').addEventListener('click', () => {
+        document.querySelector('#remove-current-selection-button').addEventListener('click', () => {
             sendSelection('None')
+        })
+
+        document.querySelector('#cancel-button').addEventListener('click', () => {
+            sendSelection('cancel')
         })
     })()
 </script>
