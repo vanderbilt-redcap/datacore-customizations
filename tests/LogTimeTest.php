@@ -181,11 +181,15 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
 
         $assert([], $this->getProjectNameError());
         $assert(['project_name' => 1], null);
-        $assert([
+
+        $log = [
             'project_name' => 1,
             'project_hours' => 1,
             'project_hours_2' => 1,
-        ], $this->getHoursError());
+        ];
+        $this->assertThrowsException(function() use ($log){
+            $this->checkForErrors($log);
+        }, $this->getHoursError($log));
 
         $assert([
             'project_name' => 1,

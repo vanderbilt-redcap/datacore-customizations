@@ -118,62 +118,63 @@ if(!empty($unmatched)){
         Please resolve these discrepancies on either side, and try syncing again:
     ", $unmatched);
 }
-else{
+else if(!empty($incomplete)){
+    echo "<h6>
+        Please ask Kelsey or Lindsay to enter 'Requested By' and 'Hours Survey Project' fields in Assembla for the following tickets,<br>
+        then try again:
+    </h6>";
+
+    echo $module->getTicketLinks($incomplete);
+}
+else if(!empty($new)){
     $module->displayTimeLogs("
-        The following entries have errors that prevent them from being automatically logged.
-        Please resolve the errors and try again, or log these entries manually AFTER using this tool to log as many entries as possible.
-    ", $incomplete);
+        The following new entries will be logged.
+        Please review them for accuracy before continuing:
+    ", $new);
 
-    if(!empty($new)){
-        $module->displayTimeLogs("
-            The following new entries will be logged.
-            Please review them for accuracy before continuing:
-        ", $new);
+    ?>
+    <button id='log-new-entries'>Log New Entries</button>
+    <script>
+        document.querySelector("#log-new-entries").addEventListener('click', () => {
+            const pageLoadTime = <?=json_encode(time())?>;
 
-        ?>
-        <button id='log-new-entries'>Log New Entries</button>
-        <script>
-            document.querySelector("#log-new-entries").addEventListener('click', () => {
-                const pageLoadTime = <?=json_encode(time())?>;
+            const secondsSinceLoad = Date.now()/1000 - pageLoadTime
+            if(secondsSinceLoad > 60*60){
+                alert('This page is an hour old. Please close it and reopen it from Assembla to make sure the time logs are up to date.')
+                return
+            }
 
-                const secondsSinceLoad = Date.now()/1000 - pageLoadTime
-                if(secondsSinceLoad > 60*60){
-                    alert('This page is an hour old. Please close it and reopen it from Assembla to make sure the time logs are up to date.')
-                    return
-                }
+            if(
+                <?=json_encode(!empty($incomplete))?>
+                &&
+                !confirm('Incomplete entries exist.  Are you sure you want to log your time before resolving these?')
+            ){
+                return
+            }
 
-                if(
-                    <?=json_encode(!empty($incomplete))?>
-                    &&
-                    !confirm('Incomplete entries exist.  Are you sure you want to log your time before resolving these?')
-                ){
-                    return
-                }
+            const data = new URLSearchParams()
+            data.append('redcap_csrf_token', <?=json_encode($module->getCSRFToken())?>)
+            data.append('data', JSON.stringify(<?=json_encode($new)?>))
 
-                const data = new URLSearchParams()
-                data.append('redcap_csrf_token', <?=json_encode($module->getCSRFToken())?>)
-                data.append('data', JSON.stringify(<?=json_encode($new)?>))
-
-                fetch(<?=json_encode($module->getUrl('save-new-time-logs.php'))?>, {
-                    method: 'POST',
-                    body: data,
-                })
-                .then((response) => response.text())
-                .then((text) => {
-                    if(text === 'success'){
-                        alert('New entries have been successfully logged!')
-                        close()
-                    }
-                    else{
-                        alert("An error occurred.  See the browser console for details.")
-                        console.error(text)
-                    }
-                });
+            fetch(<?=json_encode($module->getUrl('save-new-time-logs.php'))?>, {
+                method: 'POST',
+                body: data,
             })
-        </script>
-        <?php
-    }
-    else if(empty($incomplete)){
-        echo "Your Assembla time entries totaling $totalAssembalHours hours have already been synced with the REDCap Hours Survey for this month.";
-    }
+            .then((response) => response.text())
+            .then((text) => {
+                if(text === 'success'){
+                    alert('New entries have been successfully logged!')
+                    close()
+                }
+                else{
+                    alert("An error occurred.  See the browser console for details.")
+                    console.error(text)
+                }
+            });
+        })
+    </script>
+    <?php
+}
+else{
+    echo "Your Assembla time entries totaling $totalAssembalHours hours have already been synced with the REDCap Hours Survey for this month.";
 }

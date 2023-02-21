@@ -155,8 +155,8 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         return 'Someone on the grant must be set for the "Requested By" field on this Assembla ticket in order to automatically log entries for it.  This should ONLY be done if that person is appropriate for ALL time logged by anyone on this ticket.';
     }
 
-    function getHoursError(){
-        return 'Time entries that include both "project_hours" and "project_hours_2" are not currently supported.';
+    function getHoursError($log){
+        return 'Time entries that include both "project_hours" and "project_hours_2" are not currently supported: ' . json_encode($log);
     }
 
     function getProjectNameError(){
@@ -171,7 +171,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         $projectName = $log['project_name'] ?? null;
 
         if(!empty($hours1) && !empty($hours2)){
-            return $this->getHoursError();
+            throw new \Exception($this->getHoursError($log));
         }
         else if(
             (!empty($hours1) && !$this->hasRequestedBy($notes1))
@@ -233,9 +233,6 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         echo "<tr>";
         echo "<th>Hours</th>";
         echo "<th>Description</th>";
-        if(isset($logs[0]['error'])){
-            echo "<th>Error</th>";
-        }
         echo "</tr>";
 
         foreach($logs as $log){
@@ -249,12 +246,40 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
             echo "<tr>";
             echo "<td>$hours</td>";
             echo "<td>$notes</td>";
-            if(isset($log['error'])){
-                echo "<td>{$log['error']}</td>";
-            }
             echo "</tr>";
         }
         echo "</table>";
+    }
+
+    private function getTicketNumber($log){
+        $notes = $log['project_notes'];
+        if(empty($notes)){
+            $notes = $log['project_notes_2'];
+        }
+
+        $parts = explode(':', $notes);
+        $number = ltrim($parts[0], '#');
+
+        if(empty($number)){
+            throw new \Exception("Could not parse ticket number: " . json_encode($log));
+        }
+
+        return $number;
+    }
+
+    function getTicketLinks($logs){
+        $numbers = [];
+        foreach($logs as $log){
+            $numbers[$this->getTicketNumber($log)] = true;
+        }
+
+        $links = [];
+        foreach(array_keys($numbers) as $number){
+            $url = "https://app.assembla.com/spaces/sdtest/tickets/$number";
+            $links[] = "<li><a href='$url'>$url</a></li>";
+        }
+
+        return '<ul>' . implode("\n", $links) . '</ul>';
     }
 
     function getUniqueCheckFields(){
