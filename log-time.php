@@ -146,14 +146,6 @@ else if(!empty($new)){
                 return
             }
 
-            if(
-                <?=json_encode(!empty($incomplete))?>
-                &&
-                !confirm('Incomplete entries exist.  Are you sure you want to log your time before resolving these?')
-            ){
-                return
-            }
-
             const data = new URLSearchParams()
             data.append('redcap_csrf_token', <?=json_encode($module->getCSRFToken())?>)
             data.append('data', JSON.stringify(<?=json_encode($new)?>))
