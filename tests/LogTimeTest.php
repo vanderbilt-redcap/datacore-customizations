@@ -20,13 +20,23 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
         }
     }
 
+    private function getUniqueProjectCode(){
+        $projectCode = $this->getUniqueRand();
+        $label = "Project $projectCode";
+
+        $this->setAssemblaBillingProject($projectCode, $label);
+        $this->setREDCapBillingProject($projectCode, $label);
+
+        return $projectCode;
+    }
+
     private function createTimeLog(){
         $log = [
             'programmer_name' => $this->getUniqueRand(),
             'billing_month' => $this->getUniqueRand(),
             'billing_year' => $this->getUniqueRand(),
             'project_role' => $this->getUniqueRand(),
-            'project_name_2' => $this->getUniqueRand(),
+            'project_name_2' => $this->getUniqueProjectCode(),
             'project_hours' => '',
             'project_notes' => '',
             'project_hours_2' => '',
@@ -180,10 +190,11 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
         };
 
         $assert([], $this->getProjectNameError());
-        $assert(['project_name_2' => 1], null);
+        $projectCode = $this->getUniqueProjectCode();
+        $assert(['project_name_2' => $projectCode], null);
 
         $log = [
-            'project_name_2' => 1,
+            'project_name_2' => $projectCode,
             'project_hours' => 1,
             'project_hours_2' => 1,
         ];
@@ -192,9 +203,31 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
         }, $this->getHoursError($log));
 
         $assert([
-            'project_name_2' => 1,
+            'project_name_2' => $projectCode,
             'project_hours' => 1,
             'project_notes' => 'whatever',
         ], $this->getRequestedByError());
+
+        $this->setREDCapBillingProject($projectCode, 'Some Different Project Name');
+        $assert(['project_name_2' => $projectCode], $this->getProjectNameError());
+    }
+
+    function testParseHoursSurveyProjectId(){
+        $assert = function($input, $expectedId, $expectedLabel = null){
+            $this->setAssemblaBillingProject($expectedId, 'This value should be reset by the call below');
+
+            $this->assertSame($expectedId, $this->parseHoursSurveyProjectId($input));
+
+            if($expectedId !== ''){
+                $this->assertSame($expectedLabel, $this->getAssemblaBillingProject($expectedId));
+            }
+        };
+
+        $assert('a (1)', '1', 'a');
+        $assert('a (b) (1)', '1', 'a (b)');
+        $assert('a (1', '');
+        $assert('a 1)', '');
+        $assert('a (a1)', '');
+        $assert('a (1a)', '');
     }
 }

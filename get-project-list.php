@@ -2,17 +2,12 @@
 
 // Used by our Assembla customizations
 
-$pid = $module->getSystemSetting('hours-survey-pid');
-$project = new \Project($pid);
-$sql = $project->metadata['project_name_2']['element_enum'];
-$result = $module->query($sql, []);
-
 echo "<p>Select an option from the hours survey project dropdown:</p>";
 echo "<select style='display: none'>";
 echo "<option value=''></option>";
-foreach($result->fetch_all() as $project){
+foreach($module->getREDCapBillingProjects() as $code=>$label){
     $project = $module->escape($project);
-    echo "<option value='{$project[0]}'>{$project[1]}</option>";
+    echo "<option value='$code'>$label</option>";
 }
 echo "</select>";
 

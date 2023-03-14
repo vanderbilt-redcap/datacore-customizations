@@ -2,6 +2,9 @@
 
 class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModule
 {
+    private $assemblaBillingProjects = [];
+    private $redcapBillingProjects = [];
+
     function redcap_every_page_top(){
         global $completed_time;
 
@@ -168,7 +171,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         $hours2 = $log['project_hours_2'] ?? null;
         $notes1 = $log['project_notes'] ?? null;
         $notes2 = $log['project_notes_2'] ?? null;
-        $projectName = $log['project_name_2'] ?? null;
+        $projectCode = $log['project_name_2'] ?? null;
 
         if(!empty($hours1) && !empty($hours2)){
             throw new \Exception($this->getHoursError($log));
@@ -180,7 +183,11 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         ){
             return $this->getRequestedByError();
         }
-        else if(empty($projectName)){
+        else if(
+            empty($projectCode)
+            ||
+            $this->getAssemblaBillingProject($projectCode) !== $this->getREDCapBillingProject($projectCode)
+        ){
             return $this->getProjectNameError();
         }
 
@@ -299,5 +306,65 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         }
 
         return $programmerId;
+    }
+
+    function parseHoursSurveyProjectId($hoursSurveyProject){
+        $parts = explode('(', $hoursSurveyProject);
+        if(count($parts) < 2){
+            return '';
+        }
+
+        $numberPortion = array_pop($parts);
+        $label = trim(implode('(', $parts));
+
+        $parts = explode(')', $numberPortion);
+        if(count($parts) < 2){
+            return '';
+        }
+
+        $value = $parts[0];
+
+        if(!ctype_digit($value)){
+            return '';
+        }
+
+        $this->setAssemblaBillingProject($value, $label);
+    
+        return $value;
+    }
+
+    function setAssemblaBillingProject($code, $label){
+        $this->assemblaBillingProjects[$code] = $label;
+    }
+
+    function getAssemblaBillingProject($code){
+        $value = $this->assemblaBillingProjects[$code] ?? null;
+        if($value === null){
+            throw new \Exception("Assembla billing project $code could not be found!");
+        }
+
+        return $value;
+    }
+
+    function setREDCapBillingProject($code, $label){
+        $this->redcapBillingProjects[$code] = $label;
+    }
+
+    function getREDCapBillingProjects(){
+        if(empty($this->redcapBillingProjects)){
+            $pid = $this->getSystemSetting('hours-survey-pid');
+            $project = new \Project($pid);
+            $sql = $project->metadata['project_name_2']['element_enum'];
+
+            foreach($this->query($sql, [])->fetch_all() as $project){
+                $this->setREDCapBillingProject($project[0], $project[1]);
+            }
+        }
+
+        return $this->redcapBillingProjects;
+    }
+
+    function getREDCapBillingProject($projectCode){
+        return $this->getREDCapBillingProjects()[$projectCode] ?? 'REDCap Billing Project Not Found';
     }
 }
