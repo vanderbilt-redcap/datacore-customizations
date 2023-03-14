@@ -97,7 +97,7 @@ $existing = \REDCap::getData([
     'project_id' => $pid,
     'return_format' => 'json-array',
     'fields' => array_merge($module->getUniqueCheckFields(), [
-        'project_name',
+        'project_name_2',
         'project_hours',
         'project_notes',
         'project_hours_2',

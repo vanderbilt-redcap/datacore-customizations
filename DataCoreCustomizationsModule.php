@@ -168,7 +168,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         $hours2 = $log['project_hours_2'] ?? null;
         $notes1 = $log['project_notes'] ?? null;
         $notes2 = $log['project_notes_2'] ?? null;
-        $projectName = $log['project_name'] ?? null;
+        $projectName = $log['project_name_2'] ?? null;
 
         if(!empty($hours1) && !empty($hours2)){
             throw new \Exception($this->getHoursError($log));

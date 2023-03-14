@@ -26,7 +26,7 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
             'billing_month' => $this->getUniqueRand(),
             'billing_year' => $this->getUniqueRand(),
             'project_role' => $this->getUniqueRand(),
-            'project_name' => $this->getUniqueRand(),
+            'project_name_2' => $this->getUniqueRand(),
             'project_hours' => '',
             'project_notes' => '',
             'project_hours_2' => '',
@@ -159,7 +159,7 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
                     'billing_month' => 1,
                     'billing_year' => 1,
                     'project_role' => 1,
-                    'project_name' => 1,
+                    'project_name_2' => 1,
                 ]
             ],
             [
@@ -167,7 +167,7 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
                     'billing_month' => 1,
                     'billing_year' => 1,
                     'project_role' => 1,
-                    'project_name' => 1,
+                    'project_name_2' => 1,
                     'programmer_name' => 1,
                 ]
             ]
@@ -180,10 +180,10 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
         };
 
         $assert([], $this->getProjectNameError());
-        $assert(['project_name' => 1], null);
+        $assert(['project_name_2' => 1], null);
 
         $log = [
-            'project_name' => 1,
+            'project_name_2' => 1,
             'project_hours' => 1,
             'project_hours_2' => 1,
         ];
@@ -192,7 +192,7 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
         }, $this->getHoursError($log));
 
         $assert([
-            'project_name' => 1,
+            'project_name_2' => 1,
             'project_hours' => 1,
             'project_notes' => 'whatever',
         ], $this->getRequestedByError());

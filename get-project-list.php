@@ -4,7 +4,7 @@
 
 $pid = $module->getSystemSetting('hours-survey-pid');
 $project = new \Project($pid);
-$sql = $project->metadata['project_name']['element_enum'];
+$sql = $project->metadata['project_name_2']['element_enum'];
 $result = $module->query($sql, []);
 
 echo "<p>Select an option from the hours survey project dropdown:</p>";
