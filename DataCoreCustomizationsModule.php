@@ -357,7 +357,11 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
             $sql = $project->metadata['project_name_2']['element_enum'];
 
             foreach($this->query($sql, [])->fetch_all() as $project){
-                $this->setREDCapBillingProject($project[0], $project[1]);
+                $labelParts = explode(',', $project[1]);
+                array_pop($labelParts); // Remove the cost center, since they change more often than we'd like to re-select this value in Assembla.
+                $label = implode(',', $labelParts);
+
+                $this->setREDCapBillingProject($project[0], $label);
             }
         }
 
