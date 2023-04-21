@@ -125,12 +125,10 @@ if(!empty($unmatched)){
     ", $unmatched);
 }
 else if(!empty($incomplete)){
-    echo "<h6>
-        Please ask Kelsey or Lindsay to enter 'Requested By' and 'Hours Survey Project' fields in Assembla for the following tickets,<br>
-        then try again.  This message may also display if the 'Hours Survey Project' needs to be updated because the code or label changed in the hours survey:
-    </h6>";
-
-    echo $module->getTicketLinks($incomplete);
+    foreach($incomplete as $error=>$tickets){
+        echo "<h6>$error</h6>";
+        echo $module->getTicketLinks($tickets);
+    }
 }
 else if(!empty($new)){
     $module->displayTimeLogs("

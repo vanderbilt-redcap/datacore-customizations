@@ -155,7 +155,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
     }
 
     function getRequestedByError(){
-        return 'Someone on the grant must be set for the "Requested By" field on this Assembla ticket in order to automatically log entries for it.  This should ONLY be done if that person is appropriate for ALL time logged by anyone on this ticket.';
+        return 'Please ask Kelsey or Lindsay to enter the "Requested By"field in Assembla for the following tickets, then try again:';
     }
 
     function getHoursError($log){
@@ -163,7 +163,10 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
     }
 
     function getProjectNameError(){
-        return 'An "Hours Survey Project" must be selected for this Assembla ticket.  This should ONLY be done if that project is appropriate for all time logged by anyone on this ticket.';
+        return '
+            Please ask Kelsey or Lindsay to enter the "Hours Survey Project" field in Assembla for the following tickets, then try again.<br>
+            This message may also display if the "Hours Survey Project" needs to be updated because the code or label changed in the hours survey:
+        ';
     }
 
     function checkForErrors($log){
@@ -222,8 +225,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
                 $new[] = $newLog;
             }
             else{
-                $newLog['error'] = $error;
-                $incomplete[] = $newLog;
+                $incomplete[$error][] = $newLog;
             }
         }
 

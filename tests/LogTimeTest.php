@@ -91,10 +91,7 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
         $existingLog = $this->createTimeLog();
         $newLog = $this->createTimeLog();
         $unmatchedLog = $this->createTimeLog();
-
         $incompleteLog = $this->removeRequestedBy($this->createTimeLog());
-        $incompleteLogWithError = $incompleteLog;
-        $incompleteLogWithError['error'] = $this->getRequestedByError();
 
         $this->assertCompareTimeLogs(
             [
@@ -105,11 +102,10 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
             [
                 $existingLog,
             ],
-            function($unmatched, $new, $incomplete) use ($newLog, $incompleteLogWithError){
-
+            function($unmatched, $new, $incomplete) use ($newLog, $incompleteLog){
                 $this->assertEmpty($unmatched);
                 $this->assertSame([$newLog], $new);
-                $this->assertSame([$incompleteLogWithError], $incomplete);
+                $this->assertSame([$this->getRequestedByError() => [$incompleteLog]], $incomplete);
             }
         );
         
