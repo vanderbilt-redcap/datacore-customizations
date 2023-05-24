@@ -8,6 +8,8 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
     function redcap_every_page_top(){
         global $completed_time;
 
+        $this->performTroubleshooting();
+
         $GLOBALS['lang']['bottom_93'] = $this->getSystemSetting('completed-dialog-message');
 
         if(PAGE === 'ProjectSetup/other_functionality.php'){
@@ -63,6 +65,35 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
             </script>
             <?php
         }
+    }
+
+    function performTroubleshooting(){
+        if(!isset($_GET['enable-datacore-customizations-module-troubleshooting'])){
+            return;
+        }
+
+        $_SERVER['PHP_SELF'] .= 'ControlCenter/stats_ajax.php';
+        db_connect();
+
+        if($GLOBALS['rc_replica_connection'] === null){
+            $result = 'replica not initialized!';
+        }
+        else{
+            // Paranoid way of making sure the replica is used
+            $originalConnection = $GLOBALS['rc_connection'];
+            $GLOBALS['rc_connection'] = $GLOBALS['rc_replica_connection'];
+    
+            $result = \ExternalModules\ExternalModules::getDiscoverableModules();
+
+            $GLOBALS['rc_connection'] = $originalConnection;
+        }
+
+
+        ?>
+        <script>
+            console.log('Datacore Customizations Module Troubleshooting:', <?=json_encode($result)?>)
+        </script>
+        <?php
     }
 
     private function getProjectListPID(){
