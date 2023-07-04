@@ -139,7 +139,10 @@ else if(!empty($new)){
     ?>
     <button id='log-new-entries'>Log New Entries</button>
     <script>
-        document.querySelector("#log-new-entries").addEventListener('click', () => {
+        document.querySelector("#log-new-entries").addEventListener('click', (e) => {
+            const button = e.target
+            button.disabled = true
+
             const pageLoadTime = <?=json_encode(time())?>;
 
             const secondsSinceLoad = Date.now()/1000 - pageLoadTime
