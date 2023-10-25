@@ -199,14 +199,18 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
              * has the Assembla customizations disabled, and time entries that should
              * have had roles are missing them.
              */
-            return '
-                A role has not been selected for some of the time entries on the following tickets.
-                Please edit them and make sure a role is selected.
-                You can see which time entries are missing a role via the "Download as CSV" button:
-            ';
+            return $this->getMissingRoleError();
         }
 
         return null;
+    }
+
+    function getMissingRoleError(){
+        return '
+            A role has not been selected for some of the time entries on the following tickets.
+            Please edit them and make sure a role is selected.
+            You can see which time entries are missing a role via the "Download as CSV" button:
+        ';
     }
 
     function ensureUniqueCheckFieldsExist($logs){

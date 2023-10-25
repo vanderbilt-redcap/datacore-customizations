@@ -187,13 +187,17 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
 
         $assert([], $this->getProjectNameError());
         $projectCode = $this->getUniqueProjectCode();
-        $assert(['project_name_2' => $projectCode], null);
 
         $log = [
-            'project_name_2' => $projectCode,
-            'project_hours' => 1,
-            'project_hours_2' => 1,
+            'project_name_2' => $projectCode
         ];
+        $assert($log, $this->getMissingRoleError());
+
+        $log['project_role'] = rand();
+        $assert($log, null);
+
+        $log['project_hours'] = 1;
+        $log['project_hours_2'] = 2;
         $this->assertThrowsException(function() use ($log){
             $this->checkForErrors($log);
         }, $this->getHoursError($log));
