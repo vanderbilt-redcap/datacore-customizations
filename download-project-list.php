@@ -19,8 +19,11 @@ $result = $query->execute();
 header('Content-disposition: attachment; filename="DataCore Project List.csv"'); 
 
 $out = fopen('php://output', 'w');
+echo "\xEF\xBB\xBF"; // UTF-8 BOM required for correct UTF-8 character handling
 fputcsv($out, ['Project ID', 'Name', 'Status', 'Completed']);
 while($row = $result->fetch_assoc()){
+    $row['app_title'] = html_entity_decode($row['app_title'], ENT_QUOTES);
+
     $status = $row['status'];
     if($status == '0'){
         $statusLabel = "Development";
