@@ -389,4 +389,12 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
     function getREDCapBillingProject($projectCode){
         return $this->getREDCapBillingProjects()[$projectCode] ?? 'REDCap Billing Project Not Found';
     }
+
+    function redcap_module_link_check_display($project_id, $link){
+        if($link['name'] === 'Download DataCore Project List' && $project_id != $this->getProjectListPID()){
+            return false;
+        }
+
+        return $link;
+    }
 }
