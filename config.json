@@ -35,6 +35,15 @@
 			"type": "rich-text"
 		}
 	],
+	"links": {
+		"project": [
+			{
+				"name": "Download DataCore Project List",
+				"icon": "fas fa-list",
+				"url": "download-project-list.php"
+			}
+		]
+	},
 	"crons": [
 		{
 			"cron_name": "daily-cron",

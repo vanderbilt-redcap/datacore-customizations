@@ -65,7 +65,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         }
     }
 
-    private function getProjectListPID(){
+    function getProjectListPID(){
         return (int) $this->getSystemSetting('project-list-pid');
     }
 
