@@ -128,6 +128,28 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
                 $this->assertEmpty($incomplete);
             }
         );
+
+        /**
+         * Ensure multiple similar or identical logs are compared correctly.
+         * This simulates odd billing periods (like the end of the fiscal year)
+         * where we may need to log multiple times in one month.
+         */
+        $this->assertCompareTimeLogs(
+            [
+                $existingLog,
+                $existingLog,
+                $newLog
+            ],
+            [
+                $existingLog,
+                $existingLog,
+            ],
+            function($unmatched, $new, $incomplete) use ($newLog){
+                $this->assertEmpty($unmatched);
+                $this->assertSame([$newLog], $new);
+                $this->assertEmpty($incomplete);
+            }
+        );
     }
 
     function assertCompareTimeLogs($assemblaLogs, $existingLogs, $assert){
