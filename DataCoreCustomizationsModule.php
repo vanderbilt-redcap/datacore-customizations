@@ -193,7 +193,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         ){
             return $this->getProjectNameError();
         }
-        else if(!is_numeric($log['project_role'])){
+        else if(!is_numeric($log['project_role'] ?? null)){
             /**
              * This check is mainly to cover the scenario where someone accidentally
              * has the Assembla customizations disabled, and time entries that should
