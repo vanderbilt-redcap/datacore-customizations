@@ -225,7 +225,19 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 
     function compareTimeLogs($assemblaLogs, $existingLogs){
         foreach(func_get_args() as $logs){
-            $this->ensureUniqueCheckFieldsExist($logs);
+            try{
+                $this->ensureUniqueCheckFieldsExist($logs);
+            }
+            catch(\Exception $e){
+                if($logs === $assemblaLogs){
+                    $message = "Error processing new logs from Assembla";
+                }
+                else{ // $logs === $existingLogs
+                    $message = "Error processing existing logs in REDCap";
+                }
+    
+                throw new \Exception($message, 0, $e);
+            }
         }
 
         $unmatched = $this->arrayDeepDiff($existingLogs, $assemblaLogs);
