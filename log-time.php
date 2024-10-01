@@ -114,6 +114,16 @@ $existing = \REDCap::getData([
     "
 ]);
 
+?>
+<script>
+    (() => {
+        // For debugging sync issues
+        console.log('Assembla Entries', <?=json_encode($assemblaEntries)?>)
+        console.log('Existing REDCap Entries', <?=json_encode($existing)?>)
+    })()
+</script>
+<?php
+
 [$unmatched, $new, $incomplete] = $module->compareTimeLogs($assemblaEntries, $existing);
 if(!empty($unmatched)){
     // Only show unmatched logs, since new & incomplete logs can't be correctly determined when unmatched logs exist.
