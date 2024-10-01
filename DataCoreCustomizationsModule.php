@@ -127,7 +127,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
         }
     }
 
-    function redcap_save_record(int $pid, string $record = NULL, string $instrument, int $event_id, int $group_id = NULL, string $survey_hash = NULL, int $response_id = NULL, int $repeat_instance = 1){
+    function redcap_save_record($pid, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance){
         $projectListPid = $this->getProjectListPID();
         $targetPid = (int) $_POST['pid'];
         if($pid === $projectListPid && $instrument === 'project_creation_tracking' && $targetPid !== 0){
