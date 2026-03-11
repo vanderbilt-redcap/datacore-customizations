@@ -120,8 +120,8 @@ $existing = \REDCap::getData([
 <script>
     (() => {
         // For debugging sync issues
-        console.log('Assembla Entries', <?=$module->escape(json_encode($assemblaEntries))?>)
-        console.log('Existing REDCap Entries', <?=$module->escape(json_encode($existing))?>)
+        console.log('Assembla Entries', <?=json_encode($module->escape($assemblaEntries))?>)
+        console.log('Existing REDCap Entries', <?=json_encode($module->escape($existing))?>)
     })()
 </script>
 <?php
