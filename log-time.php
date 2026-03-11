@@ -1,7 +1,9 @@
-<?php namespace Vanderbilt\DataCoreCustomizationsModule;
+<?php
 
-if($_SERVER['REQUEST_METHOD'] === 'GET'){
-    ?>
+namespace Vanderbilt\DataCoreCustomizationsModule;
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+	?>
     <script>
         /**
          * Securely retrieve the entries from Assembla via postMessage(),
@@ -33,7 +35,7 @@ if($_SERVER['REQUEST_METHOD'] === 'GET'){
         }, false);
     </script>
     <?php
-    return;
+	return;
 }
 
 ?>
@@ -59,13 +61,13 @@ if($_SERVER['REQUEST_METHOD'] === 'GET'){
 
 $payload = json_decode($_POST['data'], true);
 $payloadAge = time() - $payload['time'];
-if($payloadAge > 15){
-    die('This request has expired.  Please retry from Assembla.');
+if ($payloadAge > 15) {
+	die('This request has expired.  Please retry from Assembla.');
 }
 
 $pid = $module->getSystemSetting('hours-survey-pid');
-if(empty($pid)){
-    die('Please set the "CORE - Hourly Billing- NEW" system setting.');
+if (empty($pid)) {
+	die('Please set the "CORE - Hourly Billing- NEW" system setting.');
 }
 
 $programmerId = $module->getProgrammerId($pid);
@@ -73,41 +75,41 @@ $programmerId = $module->getProgrammerId($pid);
 $assemblaEntries = $payload['entries'];
 
 $totalAssembalHours = 0;
-foreach($assemblaEntries as &$entry){
-    $entry['programmer_name'] = (string) $programmerId;
-    $entry['billing_year'] = $payload['billing_year'];
-    $entry['billing_month'] = $payload['billing_month'];
+foreach ($assemblaEntries as &$entry) {
+	$entry['programmer_name'] = (string) $programmerId;
+	$entry['billing_year'] = $payload['billing_year'];
+	$entry['billing_month'] = $payload['billing_month'];
 
-    $hoursSurveyProject = $entry['hours_survey_project'];
-    unset($entry['hours_survey_project']);
-    $entry['project_name_2'] = $module->parseHoursSurveyProjectId($hoursSurveyProject);
+	$hoursSurveyProject = $entry['hours_survey_project'];
+	unset($entry['hours_survey_project']);
+	$entry['project_name_2'] = $module->parseHoursSurveyProjectId($hoursSurveyProject);
 
-    foreach([
-        'project_hours',
-        'project_notes',
-        'project_hours_2',
-        'project_notes_2',
-    ] as $field){
-        $value = $entry[$field] ?? '';
-        $entry[$field] = $value;
+	foreach ([
+		'project_hours',
+		'project_notes',
+		'project_hours_2',
+		'project_notes_2',
+	] as $field) {
+		$value = $entry[$field] ?? '';
+		$entry[$field] = $value;
 
-        if(str_contains($field, 'hours')){
-            $totalAssembalHours += (int) $value;
-        }
-    }
+		if (str_contains($field, 'hours')) {
+			$totalAssembalHours += (int) $value;
+		}
+	}
 }
 
 $existing = \REDCap::getData([
-    'project_id' => $pid,
-    'return_format' => 'json-array',
-    'fields' => array_merge($module->getUniqueCheckFields(), [
-        'project_name_2',
-        'project_hours',
-        'project_notes',
-        'project_hours_2',
-        'project_notes_2',
-    ]),
-    'filterLogic' => "
+	'project_id' => $pid,
+	'return_format' => 'json-array',
+	'fields' => array_merge($module->getUniqueCheckFields(), [
+		'project_name_2',
+		'project_hours',
+		'project_notes',
+		'project_hours_2',
+		'project_notes_2',
+	]),
+	'filterLogic' => "
         [programmer_name] = '$programmerId'
         and [billing_year] = '{$payload['billing_year']}'
         and [billing_month] = '{$payload['billing_month']}'
@@ -125,28 +127,26 @@ $existing = \REDCap::getData([
 <?php
 
 [$unmatched, $new, $incomplete] = $module->compareTimeLogs($assemblaEntries, $existing);
-if(!empty($unmatched)){
-    // Only show unmatched logs, since new & incomplete logs can't be correctly determined when unmatched logs exist.
-    $module->displayTimeLogs("
+if (!empty($unmatched)) {
+	// Only show unmatched logs, since new & incomplete logs can't be correctly determined when unmatched logs exist.
+	$module->displayTimeLogs("
         The following time logs already existed in REDCap, but do not have matching entries in Assembla.<br>
         If you've logged any time entries manually this month, you will not be able to use this tool.<br>
         If you have not logged any time entries manually, please send a copy of the following to Mark:<br>
         
     ", $unmatched);
-}
-else if(!empty($incomplete)){
-    foreach($incomplete as $error=>$tickets){
-        echo "<h6>$error</h6>";
-        echo $module->getTicketLinks($tickets);
-    }
-}
-else if(!empty($new)){
-    $module->displayTimeLogs("
+} elseif (!empty($incomplete)) {
+	foreach ($incomplete as $error => $tickets) {
+		echo "<h6>$error</h6>";
+		echo $module->getTicketLinks($tickets);
+	}
+} elseif (!empty($new)) {
+	$module->displayTimeLogs("
         The following new entries will be logged.
         Please review them for accuracy before continuing:
     ", $new);
 
-    ?>
+	?>
     <button id='log-new-entries'>Log New Entries</button>
     <script>
         document.querySelector("#log-new-entries").addEventListener('click', (e) => {
@@ -183,7 +183,6 @@ else if(!empty($new)){
         })
     </script>
     <?php
-}
-else{
-    echo "Your Assembla time entries totaling $totalAssembalHours hours have already been synced with the REDCap Hours Survey for this month.";
+} else {
+	echo "Your Assembla time entries totaling $totalAssembalHours hours have already been synced with the REDCap Hours Survey for this month.";
 }
