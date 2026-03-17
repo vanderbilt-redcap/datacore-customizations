@@ -94,7 +94,7 @@ foreach ($assemblaEntries as &$entry) {
 		$entry[$field] = $value;
 
 		if (str_contains($field, 'hours')) {
-			$totalAssembalHours += (int) $value;
+			$totalAssembalHours += (float) $value;
 		}
 	}
 }
@@ -184,5 +184,6 @@ if (!empty($unmatched)) {
     </script>
     <?php
 } else {
+	$totalAssembalHours = round($totalAssembalHours, 2);
 	echo "Your Assembla time entries totaling $totalAssembalHours hours have already been synced with the REDCap Hours Survey for this month.";
 }
