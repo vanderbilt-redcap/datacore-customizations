@@ -69,7 +69,7 @@ class LogTimeTest extends \ExternalModules\ModuleBaseTest
 		$assert = function ($a, $b) {
 			$this->assertThrowsException(
 				fn () => $this->compareTimeLogs($a, $b),
-				'cannot be processed because it is missing',
+				'Error processing existing logs in REDCap',
 			);
 		};
 
