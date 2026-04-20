@@ -5,11 +5,11 @@
 echo "<p>Select an option from the hours survey project dropdown:</p>";
 echo "<select style='display: none'>";
 echo "<option value=''></option>";
-foreach($module->getREDCapBillingProjects() as $code=>$label){
-    $code = $module->escape($code);
-    $label = $module->escape($label);
+foreach ($module->getREDCapBillingProjects() as $code => $label) {
+	$code = $module->escape($code);
+	$label = $module->escape($label);
 
-    echo "<option value='$code'>$label</option>";
+	echo "<option value='$code'>$label</option>";
 }
 echo "</select>";
 
