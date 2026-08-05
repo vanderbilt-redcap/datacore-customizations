@@ -1,6 +1,6 @@
 <?php
 
-$records = \REDCap::getData($module->getProjectListPID(), 'json-array', null, 'pid');
+$records = \REDCap::getData($module->getProjectId(), 'json-array', null, 'pid');
 $pids = array_column($records, 'pid');
 
 $query = $module->createQuery();

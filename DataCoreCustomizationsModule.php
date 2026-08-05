@@ -67,8 +67,18 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 		}
 	}
 
-	public function getProjectListPID() {
-		return (int) $this->getSystemSetting('project-list-pid');
+	public function getProjectListPIDs() {
+		$pids = $this->getSystemSetting('project-list-pid');
+		if (!is_array($pids)) {
+			$pids = [];
+		}
+
+		$newPids = [];
+		foreach ($pids as $pid) {
+			$newPids[] = (int) $pid;
+		}
+
+		return $newPids;
 	}
 
 	public function getProjectsWithModuleEnabledCustom() {
@@ -94,29 +104,31 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	}
 
 	public function dailyCron() {
-		$projectListPid = $this->getProjectListPID();
-		if ($projectListPid === 0) {
+		$projectListPids = $this->getProjectListPIDs();
+		if (empty($projectListPids)) {
 			// This setting has not been set
 			return;
 		}
 
 		$enabledProjects = array_flip($this->getProjectsWithModuleEnabledCustom());
-		$records = \REDCap::getData($projectListPid, 'json-array', null, 'pid');
-		$records[] = ['pid' => $projectListPid];
-		foreach ($records as $record) {
-			$pid = (int) trim($record['pid']);
-			if ($pid === 0) {
-				continue;
-			}
+		foreach ($projectListPids as $projectListPid) {
+			$records = \REDCap::getData($projectListPid, 'json-array', null, 'pid');
+			$records[] = ['pid' => $projectListPid];
+			foreach ($records as $record) {
+				$pid = (int) trim($record['pid']);
+				if ($pid === 0) {
+					continue;
+				}
 
-			if (isset($enabledProjects[$pid])) {
-				unset($enabledProjects[$pid]);
-			} else {
-				$result = $this->query('select project_id from redcap_projects where project_id = ?', $pid);
-				if ($result->fetch_assoc() === null) {
-					// The specified project has likely been deleted.  Ignore it.
+				if (isset($enabledProjects[$pid])) {
+					unset($enabledProjects[$pid]);
 				} else {
-					$this->enableModule($pid);
+					$result = $this->query('select project_id from redcap_projects where project_id = ?', $pid);
+					if ($result->fetch_assoc() === null) {
+						// The specified project has likely been deleted.  Ignore it.
+					} else {
+						$this->enableModule($pid);
+					}
 				}
 			}
 		}
@@ -128,9 +140,9 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	}
 
 	public function redcap_save_record($pid, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance) {
-		$projectListPid = $this->getProjectListPID();
+		$projectListPids = $this->getProjectListPIDs();
 		$targetPid = (int) ($_POST['pid'] ?? 0);
-		if ($pid === $projectListPid && $instrument === 'project_creation_tracking' && $targetPid !== 0) {
+		if (in_array($pid, $projectListPids) && $instrument === 'project_creation_tracking' && $targetPid !== 0) {
 			$this->enableModule($targetPid);
 		}
 	}
@@ -176,7 +188,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	}
 
 	public function redcap_module_link_check_display($project_id, $link) {
-		if ($link['name'] === 'Download DataCore Project List' && $project_id != $this->getProjectListPID()) {
+		if ($link['name'] === 'Download DataCore Project List' && !in_array($project_id, $this->getProjectListPIDs())) {
 			return false;
 		}
 
