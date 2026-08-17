@@ -16,8 +16,9 @@
 	"system-settings": [
 		{
 			"key": "project-list-pid",
-			"name": "Select the project containing the list of project IDs on which to enable this module",
-			"type": "project-id"
+			"name": "Select the project(s) containing a list of project IDs on which to enable this module",
+			"type": "project-id",
+			"repeatable": true
 		},
 		{
 			"key": "hours-survey-pid",

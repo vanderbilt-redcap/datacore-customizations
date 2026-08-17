@@ -67,8 +67,18 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 		}
 	}
 
-	public function getProjectListPID() {
-		return (int) $this->getSystemSetting('project-list-pid');
+	public function getProjectListPIDs() {
+		$pids = $this->getSystemSetting('project-list-pid');
+		if (!is_array($pids)) {
+			$pids = [];
+		}
+
+		$newPids = [];
+		foreach ($pids as $pid) {
+			$newPids[] = (int) $pid;
+		}
+
+		return $newPids;
 	}
 
 	public function getProjectsWithModuleEnabledCustom() {
@@ -94,29 +104,31 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	}
 
 	public function dailyCron() {
-		$projectListPid = $this->getProjectListPID();
-		if ($projectListPid === 0) {
+		$projectListPids = $this->getProjectListPIDs();
+		if (empty($projectListPids)) {
 			// This setting has not been set
 			return;
 		}
 
 		$enabledProjects = array_flip($this->getProjectsWithModuleEnabledCustom());
-		$records = \REDCap::getData($projectListPid, 'json-array', null, 'pid');
-		$records[] = ['pid' => $projectListPid];
-		foreach ($records as $record) {
-			$pid = (int) trim($record['pid']);
-			if ($pid === 0) {
-				continue;
-			}
+		foreach ($projectListPids as $projectListPid) {
+			$records = \REDCap::getData($projectListPid, 'json-array', null, 'pid');
+			$records[] = ['pid' => $projectListPid];
+			foreach ($records as $record) {
+				$pid = (int) trim($record['pid']);
+				if ($pid === 0) {
+					continue;
+				}
 
-			if (isset($enabledProjects[$pid])) {
-				unset($enabledProjects[$pid]);
-			} else {
-				$result = $this->query('select project_id from redcap_projects where project_id = ?', $pid);
-				if ($result->fetch_assoc() === null) {
-					// The specified project has likely been deleted.  Ignore it.
+				if (isset($enabledProjects[$pid])) {
+					unset($enabledProjects[$pid]);
 				} else {
-					$this->enableModule($pid);
+					$result = $this->query('select project_id from redcap_projects where project_id = ?', $pid);
+					if ($result->fetch_assoc() === null) {
+						// The specified project has likely been deleted.  Ignore it.
+					} else {
+						$this->enableModule($pid);
+					}
 				}
 			}
 		}
@@ -128,234 +140,13 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	}
 
 	public function redcap_save_record($pid, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance) {
-		$projectListPid = $this->getProjectListPID();
+		$projectListPids = $this->getProjectListPIDs();
 		$targetPid = (int) ($_POST['pid'] ?? 0);
-		if ($pid === $projectListPid && $instrument === 'project_creation_tracking' && $targetPid !== 0) {
+		if (in_array($pid, $projectListPids) && $instrument === 'project_creation_tracking' && $targetPid !== 0) {
 			$this->enableModule($targetPid);
 		}
 	}
 
-	public function arrayDeepDiff($a, $b) {
-		$diff = array_udiff($a, $b, function ($c, $d) {
-			ksort($c);
-			ksort($d);
-
-			return strcmp(
-				json_encode($c),
-				json_encode($d),
-			);
-		});
-
-		// Make sure keys start with zero and are sequential
-		return array_values($diff);
-	}
-
-	public function hasRequestedBy($s) {
-		return str_contains($s, 'Requested by');
-	}
-
-	public function getRequestedByError() {
-		return 'Please ask Kelsey or Lindsay to enter the "Requested By"field in Assembla for the following tickets, then try again:';
-	}
-
-	public function getHoursError($log) {
-		return 'Time entries that include both "project_hours" and "project_hours_2" are not currently supported: ' . json_encode($log);
-	}
-
-	public function getProjectNameError() {
-		return '
-            Please ask Kelsey or Lindsay to enter the "Hours Survey Project" field in Assembla for the following tickets, then try again.<br>
-            This message may also display if the "Hours Survey Project" needs to be updated because the code or label changed in the hours survey:
-        ';
-	}
-
-	public function checkForErrors($log) {
-		$hours1 = $log['project_hours'] ?? null;
-		$hours2 = $log['project_hours_2'] ?? null;
-		$notes1 = $log['project_notes'] ?? null;
-		$notes2 = $log['project_notes_2'] ?? null;
-		$projectCode = $log['project_name_2'] ?? null;
-
-		if (!empty($hours1) && !empty($hours2)) {
-			throw new \Exception($this->getHoursError($log));
-		} elseif (
-			(!empty($hours1) && !$this->hasRequestedBy($notes1))
-			||
-			(!empty($hours2) && !$this->hasRequestedBy($notes2))
-		) {
-			return $this->getRequestedByError();
-		} elseif (
-			empty($projectCode)
-			||
-			$this->getAssemblaBillingProject($projectCode) !== $this->getREDCapBillingProject($projectCode)
-		) {
-			return $this->getProjectNameError();
-		} elseif (!is_numeric($log['project_role'] ?? null)) {
-			/**
-			 * This check is mainly to cover the scenario where someone accidentally
-			 * has the Assembla customizations disabled, and time entries that should
-			 * have had roles are missing them.
-			 */
-			return $this->getMissingRoleError();
-		}
-
-		return null;
-	}
-
-	public function getMissingRoleError() {
-		return '
-            A role has not been selected for some of the time entries on the following tickets.
-            Please edit them and make sure a role is selected.
-            You can see which time entries are missing a role via the "Download as CSV" button:
-        ';
-	}
-
-	public function ensureUniqueCheckFieldsExist($logs) {
-		foreach ($this->getUniqueCheckFields() as $field) {
-			foreach ($logs as $log) {
-				if (empty($log[$field])) {
-					throw new \Exception("The following log cannot be processed because it is missing the '$field' field: " . json_encode($log));
-				}
-			}
-		}
-	}
-
-	public function compareTimeLogs($assemblaLogs, $existingLogs) {
-		foreach (func_get_args() as $logs) {
-			try {
-				$this->ensureUniqueCheckFieldsExist($logs);
-			} catch (\Exception $e) {
-				if ($logs === $assemblaLogs) {
-					$message = "Error processing new logs from Assembla";
-				} else { // $logs === $existingLogs
-					$message = "Error processing existing logs in REDCap";
-				}
-
-				throw new \Exception($message, 0, $e);
-			}
-		}
-
-		$unmatched = $this->arrayDeepDiff($existingLogs, $assemblaLogs);
-		if (!empty($unmatched)) {
-			return [$unmatched, [], []];
-		}
-
-		$new = [];
-		$incomplete = [];
-		foreach ($this->arrayDeepDiff($assemblaLogs, $existingLogs) as $newLog) {
-			$error = $this->checkForErrors($newLog);
-			if ($error === null) {
-				$new[] = $newLog;
-			} else {
-				$incomplete[$error][] = $newLog;
-			}
-		}
-
-		return [[], $new, $incomplete];
-	}
-
-	public function displayTimeLogs($message, $logs) {
-		if (empty($logs)) {
-			return;
-		}
-
-		echo "<h6>$message</h6>";
-		echo "<table class='table'>";
-		echo "<tr>";
-		echo "<th>Hours</th>";
-		echo "<th>Description</th>";
-		echo "</tr>";
-
-		foreach ($logs as $log) {
-			$hours = $log['project_hours'];
-			$notes = $log['project_notes'];
-			if ($hours === '') {
-				$hours = $log['project_hours_2'];
-				$notes = $log['project_notes_2'];
-			}
-
-			echo "<tr>";
-			echo "<td>$hours</td>";
-			echo "<td>$notes</td>";
-			echo "</tr>";
-		}
-		echo "</table>";
-	}
-
-	private function getTicketNumber($log) {
-		$notes = $log['project_notes'];
-		if (empty($notes)) {
-			$notes = $log['project_notes_2'];
-		}
-
-		$parts = explode(':', $notes);
-		$number = ltrim($parts[0], '#');
-
-		if (empty($number)) {
-			throw new \Exception("Could not parse ticket number: " . json_encode($log));
-		}
-
-		return $number;
-	}
-
-	public function getTicketLinks($logs) {
-		$numbers = [];
-		foreach ($logs as $log) {
-			$numbers[$this->getTicketNumber($log)] = true;
-		}
-
-		$links = [];
-		foreach (array_keys($numbers) as $number) {
-			$url = "https://app.assembla.com/spaces/sdtest/tickets/$number";
-			$links[] = "<li><a href='$url'>$url</a></li>";
-		}
-
-		return '<ul>' . implode("\n", $links) . '</ul>';
-	}
-
-	public function getUniqueCheckFields() {
-		return [
-			'programmer_name',
-			'billing_month',
-			'billing_year',
-			'project_role',
-		];
-	}
-
-	public function getProgrammerId($pid) {
-		$programmerName = $GLOBALS['user_lastname'] . ' (' . $GLOBALS['user_firstname'] . ')';
-		$programmerId = array_flip($this->getChoiceLabels('programmer_name', $pid))[$programmerName];
-		if (empty($programmerId)) {
-			die("The following name could not be found as an option in the hours survey: $programmerName");
-		}
-
-		return $programmerId;
-	}
-
-	public function parseHoursSurveyProjectId($hoursSurveyProject) {
-		$parts = explode('(', $hoursSurveyProject);
-		if (count($parts) < 2) {
-			return '';
-		}
-
-		$numberPortion = array_pop($parts);
-		$label = trim(implode('(', $parts));
-
-		$parts = explode(')', $numberPortion);
-		if (count($parts) < 2) {
-			return '';
-		}
-
-		$value = $parts[0];
-
-		if (!ctype_digit($value)) {
-			return '';
-		}
-
-		$this->setAssemblaBillingProject($value, $label);
-
-		return $value;
-	}
 
 	public function setAssemblaBillingProject($code, $label) {
 		$this->assemblaBillingProjects[$code] = $label;
@@ -397,7 +188,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	}
 
 	public function redcap_module_link_check_display($project_id, $link) {
-		if ($link['name'] === 'Download DataCore Project List' && $project_id != $this->getProjectListPID()) {
+		if ($link['name'] === 'Download DataCore Project List' && !in_array($project_id, $this->getProjectListPIDs())) {
 			return false;
 		}
 
