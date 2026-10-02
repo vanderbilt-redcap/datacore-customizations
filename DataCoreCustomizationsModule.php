@@ -10,6 +10,47 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	public function redcap_every_page_top() {
 		global $completed_time;
 
+		if (($_GET['action'] ?? null) === 'create') {
+			?>
+			<style>
+				form[name="createdb"] {
+					visibility: hidden;
+				}
+				#datacore-create-project-loading {
+					align-items: center;
+					display: flex;
+					gap: 10px;
+					margin: 24px 0;
+				}
+			</style>
+			<div id="datacore-create-project-loading" role="status" aria-live="polite">
+				<img src="<?=APP_PATH_IMAGES?>loader_simple.gif" alt="" width="32" height="32">
+				<span>Loading project creation questions...</span>
+			</div>
+			<script>
+				document.addEventListener('DOMContentLoaded', () => {
+					const form = document.querySelector('form[name="createdb"]');
+					const loading = document.getElementById('datacore-create-project-loading');
+
+					if (form) {
+						const actionRow = form.querySelector('#createProjectBtn')?.closest('tr');
+						if (actionRow) {
+							const questionRow = document.createElement('tr');
+							questionRow.innerHTML = '<td style="padding-top:15px;width:225px;font-weight:bold;">Additional question</td>' +
+								'<td style="padding-top:15px;"><label for="datacore_additional_question">What additional information should we know about this project?</label>' +
+								'<textarea id="datacore_additional_question" name="datacore_additional_question" rows="3" class="x-form-text x-form-field" style="display:block;width:100%;max-width:600px;"></textarea></td>';
+							actionRow.before(questionRow);
+						}
+
+						form.style.visibility = 'visible';
+					}
+
+					loading?.remove();
+				});
+			</script>
+			<?php
+		}
+
 		$GLOBALS['lang']['bottom_93'] = $this->getSystemSetting('completed-dialog-message');
 
 		if (PAGE === 'ProjectSetup/other_functionality.php') {

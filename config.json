@@ -10,6 +10,7 @@
 			"institution": "Vanderbilt University Medical Center"
 		}
 	],
+	"enable-every-page-hooks-on-system-pages": true,
 	"no-auth-pages": [
 		"get-project-list"
 	],
