@@ -14,7 +14,25 @@
 	"no-auth-pages": [
 		"get-project-list"
 	],
+	"project-settings": [
+		{
+			"key": "project-data-owner",
+			"name": "Project Data's Owner",
+			"type": "text",
+			"hidden": true
+		}
+	],
 	"system-settings": [
+		{
+			"key": "disable-project-type-test-mode",
+			"name": "Disable test mode (require the project type answer from all users)",
+			"type": "checkbox"
+		},
+		{
+			"key": "project-type-test-users",
+			"name": "Test users (REDCap usernames; comma- or newline-separated). Leave blank to disable enforcement while test mode is enabled.",
+			"type": "textarea"
+		},
 		{
 			"key": "project-list-pid",
 			"name": "Select the project(s) containing a list of project IDs on which to enable this module",

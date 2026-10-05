@@ -4,6 +4,14 @@ namespace Vanderbilt\DataCoreCustomizationsModule;
 
 class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModule
 {
+	private const PROJECT_DATA_OWNER_QUESTION = "Project Data's Owner";
+	private const PROJECT_DATA_OWNER_OPTIONS = [
+		'vh_project' => 'VH project (VUMC employees who are using REDCap for VUMC projects and the data is owned by VUMC)',
+		'collaboration' => 'Collaboration (VUMC PI with a VUMC Worktag that is working with data that belongs to an external institution)',
+		'external' => 'DataCore Customer (data belongs to external institution, no VH use of the data)',
+		'external_group' => 'External group (not related to VH)',
+	];
+
 	private $assemblaBillingProjects = [];
 	private $redcapBillingProjects = [];
 
@@ -11,7 +19,12 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 		global $completed_time;
 
 		if (($_GET['action'] ?? null) === 'create') {
+			$projectDataOwnerError = $_SESSION['datacore_project_data_owner_error'] ?? null;
+			unset($_SESSION['datacore_project_data_owner_error']);
 			?>
+			<?php if ($projectDataOwnerError !== null) { ?>
+				<div class="red mb-3" role="alert"><?=htmlspecialchars($projectDataOwnerError, ENT_QUOTES, 'UTF-8')?></div>
+			<?php } ?>
 			<style>
 				form[name="createdb"] {
 					visibility: hidden;
@@ -28,18 +41,34 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 				<span>Loading project creation questions...</span>
 			</div>
 			<script>
+				const projectDataOwnerOptions = <?=json_encode(self::PROJECT_DATA_OWNER_OPTIONS)?>;
+
 				document.addEventListener('DOMContentLoaded', () => {
 					const form = document.querySelector('form[name="createdb"]');
 					const loading = document.getElementById('datacore-create-project-loading');
 
 					if (form) {
-						const actionRow = form.querySelector('#createProjectBtn')?.closest('tr');
-						if (actionRow) {
+						const purposeRow = form.querySelector('#row_purpose');
+						if (purposeRow) {
 							const questionRow = document.createElement('tr');
-							questionRow.innerHTML = '<td style="padding-top:15px;width:225px;font-weight:bold;">Additional question</td>' +
-								'<td style="padding-top:15px;"><label for="datacore_additional_question">What additional information should we know about this project?</label>' +
-								'<textarea id="datacore_additional_question" name="datacore_additional_question" rows="3" class="x-form-text x-form-field" style="display:block;width:100%;max-width:600px;"></textarea></td>';
-							actionRow.before(questionRow);
+							questionRow.innerHTML = '<td style="padding-top:15px;width:225px;font-weight:bold;"><label for="datacore_additional_question">' + <?=json_encode(self::PROJECT_DATA_OWNER_QUESTION)?> + '</label></td>' +
+								'<td style="padding-top:15px;">' +
+								'<select id="datacore_additional_question" name="datacore_additional_question" class="x-form-text x-form-field" style="display:block;width:100%;max-width:700px;">' +
+								'</select></td>';
+							const projectDataOwnerSelect = questionRow.querySelector('#datacore_additional_question');
+							const emptyOption = document.createElement('option');
+							emptyOption.value = '';
+							emptyOption.textContent = '-- Please select --';
+							projectDataOwnerSelect.append(emptyOption);
+
+							for (const [value, label] of Object.entries(projectDataOwnerOptions)) {
+								const option = document.createElement('option');
+								option.value = value;
+								option.textContent = label;
+								projectDataOwnerSelect.append(option);
+							}
+
+							purposeRow.after(questionRow);
 						}
 
 						form.style.visibility = 'visible';
@@ -106,6 +135,62 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
             </script>
             <?php
 		}
+	}
+
+	public function redcap_every_page_before_render($projectId) {
+		if (!defined('PAGE') || PAGE !== 'ProjectGeneral/create_project.php' || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+			return;
+		}
+
+		if (!$this->isProjectDataOwnerRequired()) {
+			return;
+		}
+
+		$projectDataOwner = $_POST['datacore_additional_question'] ?? null;
+		if (is_string($projectDataOwner) && isset(self::PROJECT_DATA_OWNER_OPTIONS[$projectDataOwner])) {
+			return;
+		}
+
+		$_SESSION['datacore_project_data_owner_error'] = 'Please provide an answer to: ' . self::PROJECT_DATA_OWNER_QUESTION;
+		redirect(APP_PATH_WEBROOT_PARENT . 'index.php?action=create');
+	}
+
+	private function isProjectDataOwnerRequired() {
+		$testModeDisabled = $this->getSystemSetting('disable-project-type-test-mode') == 1;
+		if ($testModeDisabled) {
+			return true;
+		}
+		$currentUsername = strtolower(trim((string) $this->getUsername()));
+
+		$testUsers = $this->getTestUsers();
+		return $currentUsername !== '' && in_array($currentUsername, $testUsers, true);
+	}
+
+	private function getTestUsers() {
+		$testUsersSetting = (string) ($this->getSystemSetting('project-type-test-users') ?? '');
+		$testUsers = preg_split('/[\r\n,]+/', $testUsersSetting, -1, PREG_SPLIT_NO_EMPTY);
+		$testUsers = array_map(function ($username) {
+			return strtolower(trim($username));
+		}, $testUsers);
+		return array_filter($testUsers);
+	}
+
+	public function redcap_module_project_save_after($projectId, $msgFlag, $projectTitle, $userId) {
+		if ($msgFlag !== 'newproject') {
+			return;
+		}
+
+		$projectDataOwner = $_POST['datacore_additional_question'] ?? '';
+		if (!isset(self::PROJECT_DATA_OWNER_OPTIONS[$projectDataOwner])) {
+			return;
+		}
+
+		$this->setProjectSetting('project-data-owner', $projectDataOwner, $projectId);
+		$this->log('Project data owner selected', [
+			'project_id' => (int) $projectId,
+			'project_data_owner' => $projectDataOwner,
+			'project_data_owner_label' => self::PROJECT_DATA_OWNER_OPTIONS[$projectDataOwner],
+		]);
 	}
 
 	public function getProjectListPIDs() {
