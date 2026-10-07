@@ -4,8 +4,8 @@ namespace Vanderbilt\DataCoreCustomizationsModule;
 
 class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModule
 {
-	private const PROJECT_DATA_OWNER_QUESTION = "Project Data's Owner";
-	private const PROJECT_DATA_OWNER_OPTIONS = [
+	public const PROJECT_DATA_OWNER_QUESTION = "Project Data's Owner";
+	public const PROJECT_DATA_OWNER_OPTIONS = [
 		'vh_project' => 'VH project (VUMC employees who are using REDCap for VUMC projects and the data is owned by VUMC)',
 		'collaboration' => 'Collaboration (VUMC PI with a VUMC Worktag that is working with data that belongs to an external institution)',
 		'external' => 'DataCore Customer (data belongs to external institution, no VH use of the data)',
@@ -18,9 +18,16 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	public function redcap_every_page_top() {
 		global $completed_time;
 
+		$projectId = defined('PROJECT_ID') ? (int) PROJECT_ID : 0;
+		if ($projectId > 0 && $this->isSuperUser()) {
+			$this->printProjectDetailsButton($projectId);
+		}
+
 		if (($_GET['action'] ?? null) === 'create') {
 			$projectDataOwnerError = $_SESSION['datacore_project_data_owner_error'] ?? null;
 			unset($_SESSION['datacore_project_data_owner_error']);
+			$showQuestion = $this->isProjectDataOwnerRequired();
+			if($showQuestion) {
 			?>
 			<?php if ($projectDataOwnerError !== null) { ?>
 				<div class="red mb-3" role="alert"><?=htmlspecialchars($projectDataOwnerError, ENT_QUOTES, 'UTF-8')?></div>
@@ -42,6 +49,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 			</div>
 			<script>
 				const projectDataOwnerOptions = <?=json_encode(self::PROJECT_DATA_OWNER_OPTIONS)?>;
+				const projectDataOwnerQuestion = <?=json_encode(self::PROJECT_DATA_OWNER_QUESTION)?>;
 
 				document.addEventListener('DOMContentLoaded', () => {
 					const form = document.querySelector('form[name="createdb"]');
@@ -51,7 +59,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 						const purposeRow = form.querySelector('#row_purpose');
 						if (purposeRow) {
 							const questionRow = document.createElement('tr');
-							questionRow.innerHTML = '<td style="padding-top:15px;width:225px;font-weight:bold;"><label for="datacore_additional_question">' + <?=json_encode(self::PROJECT_DATA_OWNER_QUESTION)?> + '</label></td>' +
+							questionRow.innerHTML = '<td style="padding-top:15px;width:225px;font-weight:bold;"><label for="datacore_additional_question">' + projectDataOwnerQuestion + '</label></td>' +
 								'<td style="padding-top:15px;">' +
 								'<select id="datacore_additional_question" name="datacore_additional_question" class="x-form-text x-form-field" style="display:block;width:100%;max-width:700px;">' +
 								'</select></td>';
@@ -68,6 +76,43 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 								projectDataOwnerSelect.append(option);
 							}
 
+							const clearProjectDataOwnerError = () => {
+								if (Object.prototype.hasOwnProperty.call(projectDataOwnerOptions, projectDataOwnerSelect.value)) {
+									projectDataOwnerSelect.removeAttribute('aria-invalid');
+								}
+							};
+							projectDataOwnerSelect.addEventListener('change', clearProjectDataOwnerError);
+							const hasValidProjectDataOwner = () => Object.prototype.hasOwnProperty.call(projectDataOwnerOptions, projectDataOwnerSelect.value);
+							const showProjectDataOwnerError = () => {
+								projectDataOwnerSelect.setAttribute('aria-invalid', 'true');
+								simpleDialog(
+									'Please provide an answer to: ' + projectDataOwnerQuestion,
+									window.lang.create_project_144,
+									null,
+									null,
+									() => projectDataOwnerSelect.focus()
+								);
+							};
+							form.addEventListener('submit', (event) => {
+								if (!hasValidProjectDataOwner()) {
+									event.preventDefault();
+									showProjectDataOwnerError();
+								}
+							});
+
+							const submitForm = HTMLFormElement.prototype.submit.bind(form);
+							form.submit = () => {
+								if (!hasValidProjectDataOwner()) {
+									if (typeof showProgress === 'function') {
+										showProgress(0, 0);
+									}
+									showProjectDataOwnerError();
+									return;
+								}
+
+								submitForm();
+							};
+
 							purposeRow.after(questionRow);
 						}
 
@@ -78,6 +123,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 				});
 			</script>
 			<?php
+			}
 		}
 
 		$GLOBALS['lang']['bottom_93'] = $this->getSystemSetting('completed-dialog-message');
@@ -137,6 +183,154 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 		}
 	}
 
+	private function printProjectDetailsButton($projectId) {
+		$projectDetails = $this->getProjectDataOwnerDetails($projectId);
+		if ($projectDetails !== null) {
+			?>
+			<style>
+				#datacore-project-data-owner-button {
+					margin: 8px;
+					text-align: left;
+					width: calc(100% - 16px);
+				}
+				dialog.datacore-project-details-dialog {
+					border: 1px solid #aaa;
+					border-radius: 4px;
+					max-width: min(640px, calc(100vw - 32px));
+					padding: 24px;
+					width: 100%;
+				}
+				dialog.datacore-project-details-dialog::backdrop {
+					background: rgba(0, 0, 0, 0.45);
+				}
+				.datacore-project-details-list {
+					display: grid;
+					gap: 8px 16px;
+					grid-template-columns: minmax(120px, 1fr) 2fr;
+					margin: 16px 0;
+				}
+				.datacore-project-details-list dt {
+					font-weight: bold;
+				}
+				.datacore-project-details-list dd {
+					margin: 0;
+					overflow-wrap: anywhere;
+					white-space: pre-wrap;
+				}
+				.datacore-project-details-actions {
+					text-align: right;
+				}
+			</style>
+			<script>
+				(() => {
+					const details = <?=json_encode($projectDetails, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>;
+					const addProjectDetailsButton = () => {
+						const sidebar = document.getElementById('west');
+						if (!sidebar || document.getElementById('datacore-project-data-owner-button')) {
+							return;
+						}
+
+						const button = document.createElement('button');
+						button.id = 'datacore-project-data-owner-button';
+						button.type = 'button';
+						button.className = 'btn btn-link';
+						button.textContent = 'Project Data\'s Owner Details';
+
+						const dialog = document.createElement('dialog');
+						dialog.className = 'datacore-project-details-dialog';
+						dialog.setAttribute('aria-labelledby', 'datacore-project-details-title');
+
+						const heading = document.createElement('h2');
+						heading.id = 'datacore-project-details-title';
+						heading.textContent = 'Project details';
+						dialog.append(heading);
+
+						const detailList = document.createElement('dl');
+						detailList.className = 'datacore-project-details-list';
+						for (const [label, value] of Object.entries(details)) {
+							const term = document.createElement('dt');
+							term.textContent = label;
+							const description = document.createElement('dd');
+							description.textContent = value || 'Not available';
+							detailList.append(term, description);
+						}
+						dialog.append(detailList);
+
+						const actions = document.createElement('div');
+						actions.className = 'datacore-project-details-actions';
+						const closeButton = document.createElement('button');
+						closeButton.type = 'button';
+						closeButton.className = 'btn btn-secondary';
+						closeButton.textContent = 'Close';
+						closeButton.addEventListener('click', () => dialog.close());
+						actions.append(closeButton);
+						dialog.append(actions);
+						dialog.addEventListener('click', (event) => {
+							if (event.target === dialog) {
+								dialog.close();
+							}
+						});
+
+						document.body.append(dialog);
+						button.addEventListener('click', () => dialog.showModal());
+						sidebar.append(button);
+					};
+
+					if (document.readyState === 'loading') {
+						document.addEventListener('DOMContentLoaded', addProjectDetailsButton, {once: true});
+					} else {
+						addProjectDetailsButton();
+					}
+				})();
+			</script>
+			<?php
+		}
+	}
+
+	private function getProjectDataOwnerDetails($projectId) {
+		$result = $this->query(
+			' SELECT app_title, purpose, purpose_other, project_note, creation_time, created_by
+			  FROM redcap_projects
+			  WHERE project_id = ?',
+			$projectId
+		);
+		$project = $result->fetch_assoc();
+		if (!$project) {
+			return null;
+		}
+
+		global $lang;
+		$purposeLabels = [
+			\RedCapDB::PURPOSE_PRACTICE => $lang['create_project_15'],
+			\RedCapDB::PURPOSE_OPS => $lang['create_project_16'],
+			\RedCapDB::PURPOSE_RESEARCH => $lang['create_project_17'],
+			\RedCapDB::PURPOSE_QUALITY => $lang['create_project_18'],
+			\RedCapDB::PURPOSE_OTHER => $lang['create_project_19'],
+		];
+		$purpose = $purposeLabels[$project['purpose']] ?? 'Not available';
+		if ((int) $project['purpose'] === \RedCapDB::PURPOSE_OTHER && $project['purpose_other'] !== '') {
+			$purpose .= ': ' . $project['purpose_other'];
+		}
+
+		$creatorInfo = \User::getUserInfoByUiid($project['created_by']);
+		$creator = $creatorInfo ? trim($creatorInfo['user_firstname'] . ' ' . $creatorInfo['user_lastname']) : '';
+		if ($creator !== '' && !empty($creatorInfo['username'])) {
+			$creator .= ' (' . $creatorInfo['username'] . ')';
+		} elseif ($creator === '') {
+			$creator = $creatorInfo['username'] ?? 'Not available';
+		}
+
+		$projectDataOwner = $this->getProjectSetting('project-data-owner', $projectId);
+		return [
+			"Project Data's Owner" => self::PROJECT_DATA_OWNER_OPTIONS[$projectDataOwner] ?? 'No answer recorded',
+			'Project title' => $project['app_title'],
+			'Purpose' => $purpose,
+			'Creator' => $creator,
+			'Creation date' => $project['creation_time'] ? \DateTimeRC::format_user_datetime($project['creation_time'], 'Y-M-D_24') : 'Not available',
+			'Project notes' => $project['project_note'] ?: 'No project notes',
+		];
+	}
+
 	public function redcap_every_page_before_render($projectId) {
 		if (!defined('PAGE') || PAGE !== 'ProjectGeneral/create_project.php' || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 			return;
@@ -160,7 +354,7 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 		if ($testModeDisabled) {
 			return true;
 		}
-		$currentUsername = strtolower(trim((string) $this->getUsername()));
+		$currentUsername = strtolower(trim($this->getUser()->getUsername()));
 
 		$testUsers = $this->getTestUsers();
 		return $currentUsername !== '' && in_array($currentUsername, $testUsers, true);
@@ -314,6 +508,10 @@ class DataCoreCustomizationsModule extends \ExternalModules\AbstractExternalModu
 	}
 
 	public function redcap_module_link_check_display($project_id, $link) {
+		if ($link['name'] === 'Project Data Owner Report' && !$this->isSuperUser()) {
+			return null;
+		}
+
 		if ($link['name'] === 'Download DataCore Project List' && !in_array($project_id, $this->getProjectListPIDs())) {
 			return false;
 		}

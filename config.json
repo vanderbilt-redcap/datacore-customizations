@@ -56,6 +56,13 @@
 		}
 	],
 	"links": {
+		"control-center": [
+			{
+				"name": "Project Data Owner Report",
+				"icon": "fas fa-list-check",
+				"url": "project-data-owner-report.php"
+			}
+		],
 		"project": [
 			{
 				"name": "Download DataCore Project List",
